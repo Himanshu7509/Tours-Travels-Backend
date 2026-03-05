@@ -118,33 +118,3 @@ export const getAllItineraries = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-
-export const addPackageImage = async (req, res) => {
-    try {
-        const { packageId } = req.params;
-
-        if (!req.file) {
-            return res.status(400).json({ success: false, message: "No image uploaded" });
-        }
-
-        // Find the package and update its image
-        const updatedPackage = await Package.findByIdAndUpdate(
-            packageId,
-            { image: req.file.location }, // S3 URL
-            { new: true } // return the updated document
-        );
-
-        if (!updatedPackage) {
-            return res.status(404).json({ success: false, message: "Package not found" });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: "Image added successfully",
-            data: updatedPackage
-        });
-
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};

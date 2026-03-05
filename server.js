@@ -9,7 +9,7 @@ import itineraryRoutes from "./src/routes/itinerary.routes.js"
 import packageTypeRoutes from "./src/routes/packageType.routes.js";
 import youtubeLinkRoutes from "./src/routes/youtubeLink.routes.js";
 import bookingRoutes from "./src/routes/booking.routes.js"
-
+import galleryRoutes from "./src/routes/gallery.routes.js";
 
 dotenv.config();
 
@@ -35,6 +35,8 @@ app.use("/api/package-types", packageTypeRoutes);
 app.use("/api/youtube-links", youtubeLinkRoutes);
 
 app.use("/api/bookings", bookingRoutes);
+
+app.use("/api/gallery", galleryRoutes);
 
 app.get("/", (req, res) => {
     res.send("Al-Shifa Tour & Travels Backend is running locally!");

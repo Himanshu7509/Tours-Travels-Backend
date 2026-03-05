@@ -1,4 +1,6 @@
 import Package from "../models/package.model.js";
+import Gallery from "../models/gallery.model.js";
+import uploadToS3 from "../utils/uploadToS3.js";
 
 /* ================= CREATE PACKAGE ================= */
 export const createPackage = async (req, res) => {
@@ -95,5 +97,36 @@ export const deletePackage = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+export const uploadGalleryImage = async (req, res) => {
+    try {
+        if (!req.file || !req.file.location) {
+            return res.status(400).json({
+                success: false,
+                message: "Image upload failed"
+            });
+        }
+
+        const galleryItem = new Gallery({
+            packageId: req.params.packageId,
+            userId: req.user.id,
+            imageUrl: req.file.location,
+            caption: req.body.caption
+        });
+
+        await galleryItem.save();
+
+        res.status(201).json({
+            success: true,
+            imageUrl: req.file.location
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
 };

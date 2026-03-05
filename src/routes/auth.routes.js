@@ -223,6 +223,41 @@ router.get("/users/:id", authMiddleware, async (req, res) => {
     }
 });
 
+router.delete("/users/:id", authMiddleware, async (req, res) => {
+    try {
+        const userId = req.params.id;
+
+        // 🔐 AUTHORIZATION CHECK
+        if (req.user._id.toString() !== userId && req.user.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied",
+            });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        await User.findByIdAndDelete(userId);
+
+        res.status(200).json({
+            success: true,
+            message: "User deleted successfully",
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to delete user",
+            error: error.message,
+        });
+    }
+});
+
 router.put("/update-profile", authMiddleware, async (req, res) => {
     try {
         const { name, phone } = req.body;

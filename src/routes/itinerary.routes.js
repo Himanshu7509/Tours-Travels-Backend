@@ -1,7 +1,5 @@
 import express from "express";
 import authMiddleware from "../middlewares/auth.middleware.js";
-// import upload from "../middlewares/upload.middleware.js";
-import upload from "../config/multer.js";
 import managerMiddleware from "../middlewares/managerMiddleware.js";
 
 import {
@@ -9,8 +7,7 @@ import {
     getItineraryByPackage,
     updateItinerary,
     deleteItinerary,
-    getAllItineraries,
-    addPackageImage
+    getAllItineraries
 } from "../controllers/itinerary.controller.js";
 
 const router = express.Router();
@@ -48,8 +45,5 @@ router.delete(
 
 /* GET ITINERARY BY PACKAGE (PUBLIC) */
 router.get("/:packageId", getItineraryByPackage);
-
-// Upload single image
-router.post("/api/packages/:packageId/image", upload.single("image"), addPackageImage);
 
 export default router;

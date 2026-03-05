@@ -1,41 +1,47 @@
 import express from "express";
 import dotenv from "dotenv";
+import cors from "cors";
+
 import connectDB from "./src/config/db.js";
 import authRoutes from "./src/routes/auth.routes.js";
 import createDefaultAdmin from "./src/utils/createDefaultAdmin.js";
 import adminPackageRoutes from "./src/routes/admin.package.routes.js";
-import managerPackageRoutes from "./src/routes/manager.package.routes.js"
-import itineraryRoutes from "./src/routes/itinerary.routes.js"
+import managerPackageRoutes from "./src/routes/manager.package.routes.js";
+import itineraryRoutes from "./src/routes/itinerary.routes.js";
 import packageTypeRoutes from "./src/routes/packageType.routes.js";
 import youtubeLinkRoutes from "./src/routes/youtubeLink.routes.js";
-import bookingRoutes from "./src/routes/booking.routes.js"
+import bookingRoutes from "./src/routes/booking.routes.js";
 import galleryRoutes from "./src/routes/gallery.routes.js";
 
 dotenv.config();
 
 const app = express();
 
+/* ✅ ADD CORS HERE */
+app.use(
+    cors({
+        origin: ["http://localhost:5173", "http://localhost:5174", "https://tours-travels-tawny.vercel.app/"], // allow all origins (DEV)
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+        credentials: true
+    })
+);
+
+/* MIDDLEWARES */
+app.use(express.json());
+
 connectDB();
 
 // ✅ CREATE DEFAULT ADMIN
 createDefaultAdmin();
 
-app.use(express.json());
-
+/* ROUTES */
 app.use("/api/auth", authRoutes);
-
 app.use("/api/admin", adminPackageRoutes);
-
-app.use("/api/manager", managerPackageRoutes); // ✅ ADD THIS
-
+app.use("/api/manager", managerPackageRoutes);
 app.use("/api/itinerary", itineraryRoutes);
-
 app.use("/api/package-types", packageTypeRoutes);
-
 app.use("/api/youtube-links", youtubeLinkRoutes);
-
 app.use("/api/bookings", bookingRoutes);
-
 app.use("/api/gallery", galleryRoutes);
 
 app.get("/", (req, res) => {

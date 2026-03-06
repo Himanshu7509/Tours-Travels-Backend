@@ -44,6 +44,7 @@ app.use("/api/youtube-links", youtubeLinkRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/gallery", galleryRoutes);
 
+
 app.get("/", (req, res) => {
     res.send("Al-Shifa Tour & Travels Backend is running locally!");
 });

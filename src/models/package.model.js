@@ -18,11 +18,6 @@ const packageSchema = new mongoose.Schema(
         },
 
         description: String,
-
-        image: {
-            type: String // ✅ Single image URL from S3
-        },
-
         paymentTerms: String,
         CancellationAndRefundPolicy: String,
         PackagesByTheme: String,

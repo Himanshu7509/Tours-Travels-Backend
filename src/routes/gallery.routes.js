@@ -1,25 +1,16 @@
 import express from "express";
-import authMiddleware from "../middlewares/auth.middleware.js";
-import uploadToS3 from "../config/multerS3.js";
-
-import {
-    uploadGalleryImage,
-    getAllGallery,
-    getGalleryByPackage,
-    getGalleryById
-} from "../controllers/gallery.controller.js";
+import { uploadGalleryImage, upload, getPackageWithGallery, getAllPackagesWithGallery, deleteGalleryImage } from "../controllers/gallery.controller.js";
 
 const router = express.Router();
 
 router.post(
-    "/:packageId/upload",
-    authMiddleware,
-    uploadToS3.single("image"),
+    "/upload",
+    upload.single("image"),
     uploadGalleryImage
 );
 
-router.get("/", getAllGallery);
-router.get("/package/:packageId", getGalleryByPackage);
-router.get("/:id", getGalleryById);
+router.get("/package-gallery/:id", getPackageWithGallery);
+router.get("/packages-with-gallery", getAllPackagesWithGallery);
+router.delete("/delete-gallery/:id", deleteGalleryImage);
 
 export default router;

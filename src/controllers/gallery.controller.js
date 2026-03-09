@@ -1,98 +1,193 @@
+import Package from "../models/package.model.js";
 import Gallery from "../models/gallery.model.js";
+import s3 from "../config/s3.js";
+import { v4 as uuidv4 } from "uuid";
+import multer from "multer";
+import dotenv from "dotenv";
 
-/* UPLOAD IMAGE */
+dotenv.config();
+
+const storage = multer.memoryStorage();
+
+export const upload = multer({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 }
+});
+
+const uploadToS3 = async (file) => {
+
+    const fileKey = `alshifa-tour-travels/gallery/${uuidv4()}-${Date.now()}-${file.originalname}`;
+
+    const params = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: fileKey,
+        Body: file.buffer,
+        ContentType: file.mimetype
+    };
+
+    const uploaded = await s3.upload(params).promise();
+
+    return uploaded.Location;
+};
+
 export const uploadGalleryImage = async (req, res) => {
+
     try {
-        if (!req.file || !req.file.location) {
+
+        if (!req.file) {
             return res.status(400).json({
                 success: false,
-                message: "Image upload failed"
+                message: "No file uploaded"
             });
         }
 
+        const { caption, packageId } = req.body;
+
+        if (!packageId) {
+            return res.status(400).json({
+                success: false,
+                message: "packageId is required"
+            });
+        }
+
+        const imageUrl = await uploadToS3(req.file);
+
         const galleryItem = new Gallery({
-            packageId: req.params.packageId,
-            userId: req.user.id,
-            imageUrl: req.file.location,
-            caption: req.body.caption
+            userId: req.user?.id,
+            packageId,   // link image with package
+            imageUrl,
+            caption
         });
 
         await galleryItem.save();
 
         res.status(201).json({
             success: true,
-            imageUrl: req.file.location
+            message: "Image uploaded successfully",
+            data: galleryItem
         });
 
     } catch (error) {
+
         res.status(500).json({
             success: false,
+            message: "Upload failed",
             error: error.message
         });
+
     }
 };
 
-/* GET ALL GALLERY */
-export const getAllGallery = async (req, res) => {
+
+export const getPackageWithGallery = async (req, res) => {
+
     try {
-        const gallery = await Gallery.find().sort({ createdAt: -1 });
 
-        res.status(200).json({
-            success: true,
-            count: gallery.length,
-            data: gallery
-        });
+        const packageId = req.params.id;
 
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
-    }
-};
+        const packageData = await Package.findById(packageId);
 
-/* GET GALLERY BY PACKAGE */
-export const getGalleryByPackage = async (req, res) => {
-    try {
-        const gallery = await Gallery.find({
-            packageId: req.params.packageId
-        }).sort({ createdAt: -1 });
-
-        res.status(200).json({
-            success: true,
-            count: gallery.length,
-            data: gallery
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
-    }
-};
-
-/* GET GALLERY BY ID */
-export const getGalleryById = async (req, res) => {
-    try {
-        const gallery = await Gallery.findById(req.params.id);
-
-        if (!gallery) {
+        if (!packageData) {
             return res.status(404).json({
                 success: false,
-                message: "Gallery not found"
+                message: "Package not found"
             });
         }
 
+        const galleryImages = await Gallery.find({ packageId });
+
         res.status(200).json({
             success: true,
-            data: gallery
+            package: packageData,
+            gallery: galleryImages
         });
 
     } catch (error) {
+
         res.status(500).json({
             success: false,
-            error: error.message
+            message: error.message
         });
+
+    }
+};
+
+export const getAllPackagesWithGallery = async (req, res) => {
+    try {
+
+        const packages = await Package.find();
+
+        const packagesWithGallery = await Promise.all(
+            packages.map(async (pkg) => {
+
+                const galleryImages = await Gallery.find({
+                    packageId: pkg._id
+                });
+
+                return {
+                    ...pkg.toObject(),
+                    gallery: galleryImages
+                };
+
+            })
+        );
+
+        res.status(200).json({
+            success: true,
+            count: packagesWithGallery.length,
+            data: packagesWithGallery
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
+    }
+};
+
+export const deleteGalleryImage = async (req, res) => {
+    try {
+
+        const imageId = req.params.id;
+
+        const galleryImage = await Gallery.findById(imageId);
+
+        if (!galleryImage) {
+            return res.status(404).json({
+                success: false,
+                message: "Image not found"
+            });
+        }
+
+        // Extract file key from S3 URL
+        const imageUrl = galleryImage.imageUrl;
+        const fileKey = imageUrl.split(".com/")[1];
+
+        const params = {
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: fileKey
+        };
+
+        // Delete from S3
+        await s3.deleteObject(params).promise();
+
+        // Delete from MongoDB
+        await Gallery.findByIdAndDelete(imageId);
+
+        res.status(200).json({
+            success: true,
+            message: "Gallery image deleted successfully"
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
     }
 };

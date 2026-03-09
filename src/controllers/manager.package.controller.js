@@ -1,6 +1,4 @@
 import Package from "../models/package.model.js";
-import Gallery from "../models/gallery.model.js";
-import uploadToS3 from "../utils/uploadToS3.js";
 
 /* ================= CREATE PACKAGE ================= */
 export const createPackage = async (req, res) => {
@@ -23,36 +21,53 @@ export const createPackage = async (req, res) => {
 /* ================= GET MY PACKAGES ================= */
 export const getMyPackages = async (req, res) => {
     try {
-        const packages = await Package.find(); // 👈 NO FILTER
 
-        res.json({
+        const packages = await Package.find()
+            .select(
+                "packageId title duration description image paymentTerms CancellationAndRefundPolicy PackagesByTheme Inclusions Exclusions createdBy createdAt"
+            );
+
+        res.status(200).json({
             success: true,
             count: packages.length,
             data: packages
         });
+
     } catch (error) {
-        res.status(500).json({ message: error.message });
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
     }
 };
 
 /* ================= GET PACKAGE BY ID ================= */
 export const getPackageById = async (req, res) => {
     try {
-        const pkg = await Package.findOne({
-            _id: req.params.id,
-            createdBy: req.user._id
-        });
+
+        const pkg = await Package.findById(req.params.id);
 
         if (!pkg) {
-            return res.status(404).json({ message: "Package not found" });
+            return res.status(404).json({
+                success: false,
+                message: "Package not found"
+            });
         }
 
-        res.json({
+        res.status(200).json({
             success: true,
             data: pkg
         });
+
     } catch (error) {
-        res.status(500).json({ message: error.message });
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
     }
 };
 
@@ -100,33 +115,33 @@ export const deletePackage = async (req, res) => {
     }
 };
 
-export const uploadGalleryImage = async (req, res) => {
-    try {
-        if (!req.file || !req.file.location) {
-            return res.status(400).json({
-                success: false,
-                message: "Image upload failed"
-            });
-        }
+// export const uploadGalleryImage = async (req, res) => {
+//     try {
+//         if (!req.file || !req.file.location) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Image upload failed"
+//             });
+//         }
 
-        const galleryItem = new Gallery({
-            packageId: req.params.packageId,
-            userId: req.user.id,
-            imageUrl: req.file.location,
-            caption: req.body.caption
-        });
+//         const galleryItem = new Gallery({
+//             packageId: req.params.packageId,
+//             userId: req.user.id,
+//             imageUrl: req.file.location,
+//             caption: req.body.caption
+//         });
 
-        await galleryItem.save();
+//         await galleryItem.save();
 
-        res.status(201).json({
-            success: true,
-            imageUrl: req.file.location
-        });
+//         res.status(201).json({
+//             success: true,
+//             imageUrl: req.file.location
+//         });
 
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
-    }
-};
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             error: error.message
+//         });
+//     }
+// };
